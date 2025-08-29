@@ -8,6 +8,11 @@ You can run the app locally and use sliders/input fields to predict whether a st
 
 ---
 
+##  Live Demo
+Try the app live here:  
+[Campus Placement Predictor Live App](https://campusplacementpredictor-rpqgxfne5xmjm3nwrvc73o.streamlit.app/)
+
+
 ## 📦 Features
 
 - Predicts student placement status based on inputs
