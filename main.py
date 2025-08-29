@@ -11,7 +11,7 @@ ENCODERS_PATH = os.path.join(MODEL_DIR, "encoders.pkl")
 
 def train_and_save_model():
     # Load dataset
-    df = pd.read_csv("data/cleaned_placement_data.csv")
+    df = pd.read_csv("cleaned_placement_data.csv")
 
     # Encode categorical columns
     encoders = {}
@@ -47,4 +47,5 @@ def train_and_save_model():
 
 if __name__ == "__main__":
     train_and_save_model()
+
 
