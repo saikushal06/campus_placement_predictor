@@ -1,52 +1,58 @@
 import pandas as pd
 import pickle
+import os
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+MODEL_PATH = "model.pkl"
+ENCODER_PATH = "encoders.pkl"
+DATA_PATH = "data/cleaned_placement_data.csv"
 
 def train_and_save_model():
+    if not os.path.exists(DATA_PATH):
+        raise FileNotFoundError(f"Dataset not found at {DATA_PATH}")
+
     # Load dataset
-    try:
-        df = pd.read_csv("dataset.csv")
-        print("📂 Dataset loaded successfully!")
-        print("Columns in dataset:", df.columns.tolist())
-    except Exception as e:
-        print("❌ Error loading dataset:", e)
-        return
+    df = pd.read_csv(DATA_PATH)
 
-    # Check for 'status' column (target)
-    if "status" not in df.columns:
-        print("❌ 'status' column not found in dataset. Please check your CSV.")
-        return
-
-    # Encode categorical features
+    # Initialize encoders for categorical features
     encoders = {}
-    for col in df.select_dtypes(include="object").columns:
-        if col != "status":
-            le = LabelEncoder()
-            df[col] = le.fit_transform(df[col])
-            encoders[col] = le
+    for col in ["Gender", "Specialization", "College_Tier"]:
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col])
+        encoders[col] = le
 
-    # Features and target
-    X = df.drop("status", axis=1)
-    y = df["status"]
+    # Prepare features & labels
+    X = df.drop("Placed", axis=1)
+    y = df["Placed"]
 
-    # Train-test split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    # Split dataset
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Train model
+    # Train RandomForest model
     model = RandomForestClassifier(random_state=42)
     model.fit(X_train, y_train)
 
-    # Save model and encoders
-    with open("model.pkl", "wb") as f:
+    # Evaluate model
+    y_pred = model.predict(X_test)
+    print("✅ Model trained successfully!")
+    print("Accuracy:", accuracy_score(y_test, y_pred))
+    print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+    print("Classification Report:\n", classification_report(y_test, y_pred))
+
+    # Save model
+    with open(MODEL_PATH, "wb") as f:
         pickle.dump(model, f)
-    with open("encoders.pkl", "wb") as f:
+
+    # Save encoders
+    with open(ENCODER_PATH, "wb") as f:
         pickle.dump(encoders, f)
 
-    print("✅ Model and encoders trained & saved successfully!")
+    print(f"Model saved to {MODEL_PATH}")
+    print(f"Encoders saved to {ENCODER_PATH}")
 
 if __name__ == "__main__":
     train_and_save_model()
