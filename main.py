@@ -1,54 +1,49 @@
 import pandas as pd
-import numpy as np
 import pickle
 import os
-
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.preprocessing import LabelEncoder
 
-# Paths
-DATA_PATH = os.path.join("data", "cleaned_placement_data.csv")
-MODEL_PATH = os.path.join("models", "placement_model.pkl")
-ENCODER_PATH = os.path.join("models", "encoders.pkl")
+MODEL_DIR = "models"
+MODEL_PATH = os.path.join(MODEL_DIR, "placement_model.pkl")
+ENCODERS_PATH = os.path.join(MODEL_DIR, "encoders.pkl")
 
-# Load data
-df = pd.read_csv(DATA_PATH)
+def train_and_save_model():
+    # Load dataset
+    df = pd.read_csv("dataset/placement.csv")
 
-# Encode categorical variables and store encoders
-encoders = {}
-for col in ["Gender", "Specialization", "College_Tier"]:
-    le = LabelEncoder()
-    df[col] = le.fit_transform(df[col])
-    encoders[col] = le
+    # Encode categorical columns
+    encoders = {}
+    for col in df.select_dtypes(include=["object"]).columns:
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col])
+        encoders[col] = le
 
-# Split data
-X = df.drop("Placed", axis=1)
-y = df["Placed"]
+    # Split features/target
+    X = df.drop("status", axis=1)
+    y = df["status"]
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
-# Train model
-model = RandomForestClassifier(random_state=42)
-model.fit(X_train, y_train)
+    # Train model
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X_train, y_train)
 
-# Evaluate
-y_pred = model.predict(X_test)
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
-print("Classification Report:\n", classification_report(y_test, y_pred))
+    # Create model directory if missing
+    os.makedirs(MODEL_DIR, exist_ok=True)
 
-# Ensure models directory exists
-os.makedirs("models", exist_ok=True)
+    # Save model
+    with open(MODEL_PATH, "wb") as f:
+        pickle.dump(model, f)
 
-# Save model and encoders
-with open(MODEL_PATH, "wb") as f:
-    pickle.dump(model, f)
+    # Save encoders
+    with open(ENCODERS_PATH, "wb") as f:
+        pickle.dump(encoders, f)
 
-with open(ENCODER_PATH, "wb") as f:
-    pickle.dump(encoders, f)
+    print("✅ Model and encoders trained & saved successfully!")
 
-print("✅ Model and encoders saved successfully!")
+if __name__ == "__main__":
+    train_and_save_model()
