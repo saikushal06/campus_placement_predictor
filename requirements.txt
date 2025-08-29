@@ -1,3 +1,5 @@
 streamlit
 pandas
 sklearn
+matplot lib
+numpy
