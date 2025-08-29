@@ -12,6 +12,10 @@ You can run the app locally and use sliders/input fields to predict whether a st
 Try the app live here:  
 [Campus Placement Predictor Live App](https://campusplacementpredictor-rpqgxfne5xmjm3nwrvc73o.streamlit.app/)
 
+---
+
+##  Demo Video
+Campus Placement Predictor (https://1drv.ms/v/c/b49816ba18c8af23/ETLxVdA6jqJHimkz4zZFlmEB0UF2FYHUtkSooUwcuiltbg?e=j8dNYi)
 
 ## 📦 Features
 
