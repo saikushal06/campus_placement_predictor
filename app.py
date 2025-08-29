@@ -2,8 +2,8 @@ import streamlit as st
 import pickle
 import numpy as np
 
-# Load the trained model
-model = pickle.load(open("models/placement_model.pkl", "rb"))
+# Load the trained model from the same folder
+model = pickle.load(open("app/placement_model.pkl", "rb"))
 
 st.set_page_config(page_title="Campus Placement Predictor", layout="centered")
 
@@ -33,7 +33,7 @@ input_data = np.array([[gender_val, cgpa, specialization_val, internships,
 
 # Prediction button
 if st.button("Predict Placement"):
-    prob = model.predict_proba(input_data)[0]  # probability for both classes
+    prob = model.predict_proba(input_data)[0]  # probabilities
     prediction = model.predict(input_data)[0]
 
     st.subheader("📊 Prediction Results")
