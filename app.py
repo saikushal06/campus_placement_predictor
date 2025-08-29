@@ -1,35 +1,47 @@
 import streamlit as st
 import pickle
-import os
-from main import train_and_save_model, MODEL_PATH, ENCODERS_PATH
+import pandas as pd
 
-# Check if model exists, else train
-if not os.path.exists(MODEL_PATH) or not os.path.exists(ENCODERS_PATH):
-    train_and_save_model()
-
-# Load model
-with open(MODEL_PATH, "rb") as f:
-    model = pickle.load(f)
-
-# Load encoders
-with open(ENCODERS_PATH, "rb") as f:
-    encoders = pickle.load(f)
+# Load model and encoders
+try:
+    with open("model.pkl", "rb") as f:
+        model = pickle.load(f)
+    with open("encoders.pkl", "rb") as f:
+        encoders = pickle.load(f)
+    st.success("✅ Model loaded successfully!")
+except Exception as e:
+    st.error(f"❌ Error loading model or encoders: {e}")
+    st.stop()
 
 st.title("🎓 Campus Placement Predictor")
 
-# Example input fields (customize as per dataset columns)
-gender = st.selectbox("Gender", ["M", "F"])
-ssc_p = st.slider("SSC Percentage", 0, 100, 60)
-hsc_p = st.slider("HSC Percentage", 0, 100, 60)
-degree_p = st.slider("Degree Percentage", 0, 100, 60)
+# Example input fields (update according to your dataset columns)
+inputs = {}
 
-# Apply encoders
-gender_encoded = encoders["gender"].transform([gender])[0]
+st.subheader("Enter Student Details")
 
-# Create feature vector (⚠️ must match training order exactly)
-features = [[gender_encoded, ssc_p, hsc_p, degree_p]]
+# Add inputs dynamically from encoders
+for col in encoders.keys():
+    options = encoders[col].classes_
+    inputs[col] = st.selectbox(f"{col}", options)
 
+# For numeric columns (not encoded)
+numeric_features = ["cgpa", "iq", "resume_score"]  # change as per your dataset
+for col in numeric_features:
+    inputs[col] = st.number_input(f"{col}", min_value=0.0, max_value=100.0, step=0.1)
+
+# Prepare input for prediction
 if st.button("Predict Placement"):
-    prediction = model.predict(features)[0]
-    result = "✅ Placed" if prediction == 1 else "❌ Not Placed"
-    st.success(f"Prediction: {result}")
+    input_df = pd.DataFrame([inputs])
+
+    # Encode categorical columns
+    for col, le in encoders.items():
+        input_df[col] = le.transform([input_df[col][0]])
+
+    # Predict
+    prediction = model.predict(input_df)[0]
+    st.subheader("📊 Prediction Result:")
+    if prediction == 1:
+        st.success("✅ The student is likely to get placed!")
+    else:
+        st.error("❌ The student might not get placed.")
