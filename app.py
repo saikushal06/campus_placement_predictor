@@ -1,49 +1,59 @@
 import streamlit as st
 import pickle
 import numpy as np
+from main import train_and_save_model
 
-# Load the trained model from the same folder
-model = pickle.load(open("app/placement_model.pkl", "rb"))
+MODEL_PATH = "model.pkl"
+ENCODERS_PATH = "encoders.pkl"
 
-st.set_page_config(page_title="Campus Placement Predictor", layout="centered")
+# Try loading model and encoders, retrain if not found
+try:
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    with open(ENCODERS_PATH, "rb") as f:
+        encoders = pickle.load(f)
+except FileNotFoundError:
+    st.warning("Training model since files not found...")
+    train_and_save_model()
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    with open(ENCODERS_PATH, "rb") as f:
+        encoders = pickle.load(f)
 
+# App UI
 st.title("🎓 Campus Placement Predictor")
-st.write("Predict your placement chances based on your academic and skill profile.")
 
-# Collect user input features
-gender = st.selectbox("Gender", ("Male", "Female"))
-cgpa = st.slider("CGPA", 5.0, 10.0, 7.0)
-specialization = st.selectbox("Specialization", ["0", "1", "2", "3", "4", "5"])
-internships = st.slider("Number of Internships", 0, 5, 1)
-comm_skill = st.slider("Communication Skills (1-10)", 1, 10, 5)
-tech_skill = st.slider("Technical Skills (1-5)", 1, 5, 3)
-mock_test = st.slider("Mock Test Score (0-100)", 0, 100, 50)
-certifications = st.slider("Certifications Completed", 0, 10, 2)
-college_tier = st.selectbox("College Tier", ["Tier 1", "Tier 2", "Tier 3"])
+cgpa = st.slider("CGPA", 0.0, 10.0, 7.0, step=0.1)
+internships = st.number_input("Internships", 0, 10, 0)
+comm = st.slider("Communication Skill (1-10)", 1, 10, 5)
+tech = st.slider("Technical Skills (1-5)", 1, 5, 3)
+mock = st.number_input("Mock Test Score", 0, 100, 0)
+cert = st.number_input("Certifications", 0, 10, 0)
 
-# Encode categorical variables
-gender_val = 0 if gender == "Male" else 1
-specialization_val = int(specialization)
-college_tier_val = {"Tier 1": 0, "Tier 2": 1, "Tier 3": 2}[college_tier]
+# Restrict dropdowns to trained categories
+gender = st.selectbox("Gender", encoders["Gender"].classes_.tolist())
+specialization = st.selectbox("Specialization", encoders["Specialization"].classes_.tolist())
+college_tier = st.selectbox("College Tier", encoders["College_Tier"].classes_.tolist())
 
-# Prepare input array
-input_data = np.array([[gender_val, cgpa, specialization_val, internships,
-                        comm_skill, tech_skill, mock_test, certifications,
-                        college_tier_val]])
+if st.button("Predict Placement Chance"):
+    try:
+        gender_enc = encoders["Gender"].transform([gender])[0]
+        specialization_enc = encoders["Specialization"].transform([specialization])[0]
+        college_tier_enc = encoders["College_Tier"].transform([college_tier])[0]
 
-# Prediction button
-if st.button("Predict Placement"):
-    prob = model.predict_proba(input_data)[0]  # probabilities
-    prediction = model.predict(input_data)[0]
+        features = np.array([
+            cgpa, internships, comm, tech, mock, cert,
+            gender_enc, specialization_enc, college_tier_enc
+        ]).reshape(1, -1)
 
-    st.subheader("📊 Prediction Results")
-    st.write(f"**Probability of Getting Placed:** {prob[1]*100:.2f}%")
-    st.write(f"**Probability of Not Getting Placed:** {prob[0]*100:.2f}%")
+        pred = model.predict(features)[0]
+        proba = model.predict_proba(features)[0][1]
 
-    if prediction == 1:
-        st.success("🎉 Likely to be Placed")
-    else:
-        st.error("❌ Not Likely to be Placed")
+        if pred == 1:
+            st.success(f"✅ Likely to be placed! (Confidence: {proba:.2f})")
+        else:
+            st.error(f"❌ Unlikely to be placed (Confidence: {proba:.2f})")
 
-st.markdown("---")
-st.caption("Built with ❤️ using Streamlit & Machine Learning")
+    except Exception as e:
+        st.error(f"Error during prediction: {e}")
+
