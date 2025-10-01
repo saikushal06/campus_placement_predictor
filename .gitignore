@@ -1,1 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# IDE files (VS Code)
+.vscode/
+.idea/
+
+# Data and logs
+data/
+logs/
 
