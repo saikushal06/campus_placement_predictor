@@ -10,3 +10,15 @@ dependencies = [
     "numpy",
     "pandas"
 ]
+
+[tool.ruff]
+# Set the target Python version for linting and formatting.
+target-version = "py310"
+# Configure the list of linter rules to enable.
+select = ["E", "F", "B", "I", "TID"]
+
+# Configure the linter to avoid certain rules.
+ignore = ["B008"]
+
+# Configure formatting to a standard line length.
+line-length = 88
